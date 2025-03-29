@@ -72,9 +72,8 @@ class RuntimeJobV2(BasePrimitiveJob[PrimitiveResult, TaskStatus]):
 
             time.sleep(1)
 
-        if self.status() == TaskStatus.Completed:
-            result = self._qrmi.task_result(self._job_id)
-            self._result = ResultDecoder.decode(result.value)
+        result = self._qrmi.task_result(self._job_id)
+        self._result = ResultDecoder.decode(result.value)
         return self._result
 
     def status(self) -> TaskStatus:
