@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright 2024, 2025 IBM. All Rights Reserved.
@@ -12,37 +10,36 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""SamplerV2 example with IBM Direct Access QRMI"""
+"""SamplerV2 example with IBM Direct Access QRMI
+Code is based on "Get started with Sampler" tutorial (https://docs.quantum.ibm.com/guides/get-started-with-primitives#get-started-with-sampler).
+"""
 
 # pylint: disable=invalid-name
-import os
-import json
 import numpy as np
 from dotenv import load_dotenv
 from qiskit.circuit.library import EfficientSU2
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-from qiskit_ibm_runtime.utils.backend_converter import convert_to_target
-from qiskit_ibm_runtime.models import BackendProperties, BackendConfiguration
 from qrmi_primitives.ibm import IBMDirectAccessSamplerV2
 from qrmi import IBMDirectAccess
 
+from target import get_target
+
+# Create QRMI
 load_dotenv()
-
 qrmi = IBMDirectAccess()
-target = qrmi.target(os.environ["QRMI_RESOURCE_ID"])
-target = json.loads(target.value)
-backend_config = BackendConfiguration.from_dict(target["configuration"])
-print(backend_config)
-backend_props = BackendProperties.from_dict(target["properties"])
-print(backend_props)
 
+# Generate transpiler target from backend configuration & properties
+target = get_target(qrmi)
+
+# Create a circuit - You need at least one circuit as the input to the Sampler primitive.
 circuit = EfficientSU2(127, entanglement="linear", flatten=True)
 circuit.measure_all()
 # The circuit is parametrized, so we will define the parameter values for execution
 param_values = np.random.rand(circuit.num_parameters)
 
-# Generate transpiler target from backend configuration & properties
-target = convert_to_target(backend_config, backend_props)
+# The circuit and observable need to be transformed to only use instructions
+# supported by the QPU (referred to as instruction set architecture (ISA) circuits).
+# We'll use the transpiler to do this.
 pm = generate_preset_pass_manager(
     optimization_level=1,
     target=target,
@@ -50,7 +47,11 @@ pm = generate_preset_pass_manager(
 isa_circuit = pm.run(circuit)
 print(f">>> Circuit ops (ISA): {isa_circuit.count_ops()}")
 
+# Initialize QRMI Sampler
 sampler = IBMDirectAccessSamplerV2()
+
+# Next, invoke the run() method to generate the output. The circuit and optional
+# parameter value sets are input as primitive unified bloc (PUB) tuples.
 job = sampler.run([(isa_circuit, param_values)])
 print(f">>> Job ID: {job.job_id()}")
 print(f">>> Job Status: {job.status()}")

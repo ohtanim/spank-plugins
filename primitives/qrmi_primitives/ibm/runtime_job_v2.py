@@ -17,8 +17,16 @@
 import time
 from qiskit_ibm_runtime.utils.result_decoder import ResultDecoder
 from qiskit.primitives import BasePrimitiveJob, PrimitiveResult
+from qiskit.providers import JobStatus
 from qrmi import IBMDirectAccess, TaskStatus
 
+STATUS_MAP = {
+    TaskStatus.Queued: JobStatus.QUEUED,
+    TaskStatus.Running: JobStatus.RUNNING,
+    TaskStatus.Completed: JobStatus.DONE,
+    TaskStatus.Failed: JobStatus.ERROR,
+    TaskStatus.Cancelled: JobStatus.CANCELLED,
+}
 
 class RuntimeJobV2(BasePrimitiveJob[PrimitiveResult, TaskStatus]):
     """Representation of a runtime V2 primitive exeuction.
@@ -38,8 +46,8 @@ class RuntimeJobV2(BasePrimitiveJob[PrimitiveResult, TaskStatus]):
             job_id: Job ID.
             delete_job: True if you want delete Direct Access job in the destructor.
         """
+        super().__init__(job_id)
         self._qrmi = qrmi
-        self._job_id = job_id
         self._last_status = None
         self._result = None
         self._delete_job = delete_job
@@ -49,11 +57,6 @@ class RuntimeJobV2(BasePrimitiveJob[PrimitiveResult, TaskStatus]):
         """
         if self._delete_job is True:
             self._qrmi.task_stop(self._job_id)
-
-    def job_id(self) -> str:
-        """Return a unique id identifying the job.
-        """
-        return self._job_id
 
     def cancel(self) -> None:
         """Cancel the job.
@@ -76,7 +79,7 @@ class RuntimeJobV2(BasePrimitiveJob[PrimitiveResult, TaskStatus]):
         self._result = ResultDecoder.decode(result.value)
         return self._result
 
-    def status(self) -> TaskStatus:
+    def status(self) -> JobStatus:
         """Return the status of the job.
 
         Returns:
@@ -87,28 +90,29 @@ class RuntimeJobV2(BasePrimitiveJob[PrimitiveResult, TaskStatus]):
             TaskStatus.Running,
         ]:
             self._last_status = self._qrmi.task_status(self._job_id)
-        return self._last_status
+        #return self._to_jobstatus(self._last_status)
+        return STATUS_MAP.get(self._last_status)
 
     def done(self) -> bool:
         """Return whether the job has successfully run.
         """
-        return self.status() == TaskStatus.Completed
+        return self.status() == JobStatus.DONE
 
     def running(self) -> bool:
         """Return whether the job is actively running.
         """
-        return self.status() == TaskStatus.Running
+        return self.status() == JobStatus.RUNNING
 
     def cancelled(self) -> bool:
         """Return whether the job has been cancelled.
         """
-        return self.status() == TaskStatus.Cancelled
+        return self.status() == JobStatus.CANCELLED
 
     def in_final_state(self) -> bool:
         """Return whether the job is in a final job state such as ``DONE`` or ``ERROR``.
         """
         return self.status() in [
-            TaskStatus.Completed,
-            TaskStatus.Cancelled,
-            TaskStatus.Failed,
+            JobStatus.DONE,
+            JobStatus.CANCELLED,
+            JobStatus.ERROR,
         ]
