@@ -17,7 +17,7 @@ Quantum spank plugins for Slurm
 > | QuantumResource trait implementator(Rust) | qrmi::ibm::IBMQiskitRuntimeService | qrmi::ibm::IBMQuantumComputeService |
 > | Environment variable prefixes | QRMI_IBM_QRS_ | QRMI_IBM_QCS_ |
 > 
-> A transition period will be in effect until **October 21, 2026**. During this period, both the legacy and the new resource names and environment variable prefixes are supported to ensure backward compatibility. After the transition period ends, support for the legacy names will be removed, and users are expected to migrate fully to the new naming scheme.
+> A transition period will be in effect until **November 21, 2026**. During this period, both the legacy and the new resource names and environment variable prefixes are supported to ensure backward compatibility. After the transition period ends, support for the legacy names will be removed, and users are expected to migrate fully to the new naming scheme.
 
 
 This is repository with Slurm Spank plugins for Quantum resources and jobs support.
@@ -30,6 +30,7 @@ This is repository with Slurm Spank plugins for Quantum resources and jobs suppo
 1. [HPC user experience, HPC developer experience and usage patterns](./docs/ux.md)
 1. [Installation](INSTALL.md)
 1. [How-Tos](./docs/howtos/)
+1. [FAQ](./docs/FAQ.md)
 1. [How to Give Feedback](#how-to-give-feedback)
 1. [How to Cite This Work](#how-to-cite-this-work)
 1. [Contribution Guidelines](#contribution-guidelines)
